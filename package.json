@@ -1,0 +1,23 @@
+{
+  "name": "final-project-team-14",
+  "version": "1.0.0",
+  "description": "final project by Dakota, Martin, Josh",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/osu-cs493-sp20/final-project-team-14.git"
+  },
+  "author": "Dakota, Martin, Josh",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/osu-cs493-sp20/final-project-team-14/issues"
+  },
+  "homepage": "https://github.com/osu-cs493-sp20/final-project-team-14#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "morgan": "^1.10.0"
+  }
+}
