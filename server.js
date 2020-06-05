@@ -1,6 +1,10 @@
 const express = require('express');
 const morgan = require('morgan');
 
+const {
+    connectToDB
+} = require('./lib/mongo');
+
 const app = express();
 const port = process.env.PORT || 8000;
 
@@ -16,6 +20,8 @@ app.use('/', (req, res) => {
     });
 });
 
-app.listen(port, () => {
-    console.log(`== Server is running on port ${port}`);
+connectToDB(() => {
+    app.listen(port, () => {
+        console.log(`== Server is running on port ${port}`);
+    });
 });
