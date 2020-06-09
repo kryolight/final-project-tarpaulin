@@ -54,7 +54,6 @@ const upload = multer({
 router.post('/', requireAuthentication, async (req, res) => {
     if(validateAgainstSchema(req.body, assignmentSchema ) && 
     (req.role == 'admin' || req.role == 'instructor')){
-      const instructorId = (req.role == 'instructor') ? req.userId : (req.body.instructorId) ? req.body.instructorId : "TBD";
       try{
           const id = insertNewAssignment(req.body);
           res.status(201).send({
@@ -95,6 +94,30 @@ router.get('/:id', async (req, res, next) => {
       error: "Error fetching assignment. Try again later."
     });
   }
+});
+
+
+router.delete('/:id', requireAuthentication, async(req, res, next) =>{
+  const assignId =  req.params.id;
+
+  try{
+    const assignment = getAssignmentById(assignId);
+    if(assignment){
+      try {
+              //try delete, using id as a check
+      } catch (err){
+              //unauthorized
+      }
+
+    } else {
+      //invalid assignment id
+    }
+    
+    
+  } catch (err) {
+      //error searching for assignment
+  }
+
 });
 
 

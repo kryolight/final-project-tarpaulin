@@ -47,3 +47,15 @@ exports.getAssignmentById = async function (id) {
         return results[0];
     }
 };
+
+
+async function deleteAssignmentById(id) {
+    const db = getDBReference();
+    const collection = db.collection('assignments');
+    const result = await collection.deleteOne({
+        _id: new ObjectId(id)
+    });
+
+    return result.deletedCount >0;
+}
+exports.deleteAssignmentById = deleteAssignmentById;
