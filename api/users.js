@@ -68,7 +68,7 @@ router.post('/login', async (req, res) => {
       );
       if (authenticated) {
         const user = await getUserPriveleges(req.body.email);
-        const token = generateAuthToken(user._id, user.role);
+        const token = generateAuthToken(user.id, user.role);
         res.status(200).send({
           token: token
         });
