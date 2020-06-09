@@ -1,4 +1,3 @@
-//db.auth('root', 'hunter2');
 db.createUser({
     user: "tarpaulin",
     pwd: "hunter2",
@@ -10,4 +9,4 @@ db.createUser({
     ]
 });
 
-print("I Exist");
+
