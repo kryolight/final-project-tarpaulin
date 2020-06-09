@@ -1,3 +1,7 @@
+db.users.createIndex(
+  { "email": 1 },
+  { unique: true }
+);
 db.users.insertMany([
     {
         "_id" : ObjectId("5eded3ed6a323c2bc9e5c9c9"), //"4",
