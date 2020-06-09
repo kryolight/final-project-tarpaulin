@@ -31,7 +31,7 @@ db.courses.insertMany([
         "name" : "Mobile Application Development",
         "term" : "w20",
         "instructorId" : ObjectId("5eded4851ab5b6af90d7b3a0"),//"8"
-        "student": []
+        "students": []
     },
     {
         "_id": ObjectId("5eded54ccc745ac94ae00a6d"), //"4",
