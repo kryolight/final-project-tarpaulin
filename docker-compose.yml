@@ -12,6 +12,8 @@ services:
       MONGO_PASSWORD: ${MONGO_PASSWORD}
       MONGO_HOST: ${MONGO_HOST}
       MONGO_PORT: ${MONGO_PORT}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
 
   mongodb:
     image: mongo:latest
@@ -25,6 +27,11 @@ services:
     volumes:
       - mongo-data:/data/db
       - ./db-init/:/docker-entrypoint-initdb.d/
+
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379
 
 volumes:
   mongo-data:
