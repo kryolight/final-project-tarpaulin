@@ -20,12 +20,9 @@ router.post('/', checkAuthentication, async (req,res) => {
     // check if a user is an admin, and saitize the input for role
     try {
       if (req.role === 'admin') {
-        // if user is an admin, they can create any type of user
-        if (req.body.role === 'admin') {
-          req.body.role = 'admin';
-        } else if (req.body.role === 'instructor') {
-          req.body.role = 'instructor';
-        } else {
+        // sanitize input to be one of the three options,
+        // defaults bad inputs to student
+        if (req.body.role !== 'admin' && req.body.role !== 'instructor') {
           req.body.role = 'student';
         }
       } else {
