@@ -37,14 +37,9 @@ app.use('*', function (req, res, next) {
   res.status(404).json({
     error: "Requested resource " + req.originalUrl + " does not exist"
   });
+});
 
 app.use(applyRateLimit);
-
-app.use('/', (req, res) => {
-    res.status(200).send({
-        msg: "Hello, World"
-    });
-});
 
 connectToDB(() => {
     app.listen(port, () => {
