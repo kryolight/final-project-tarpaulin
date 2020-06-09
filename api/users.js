@@ -6,7 +6,7 @@ const {
   UserSchema,
   insertNewUser,
   getUserById,
-  getUserPrvileges,
+  getUserPriveleges,
   validateUser,
   getCoursesByInstructorId,
   getEnrolledCoursesByStudentId
@@ -18,27 +18,27 @@ const {
 router.post('/', checkAuthentication, async (req,res) => {
   if (validateAgainstSchema(req.body, UserSchema)) {
     // check if a user is an admin, and saitize the input for role
-    if (req.role === 'admin') {
-      // if user is an admin, they can create any type of user
-      if (req.body.role === 'admin') {
-        req.body.role = 'admin';
-      } else if (req.body.role === 'instructor') {
-        req.body.role = 'instructor';
-      } else {
-        req.body.role = 'student';
-      }
-    } else {
-      // if user is not an admin, they can only create students
-      if (req.body.role === 'admin' || req.body.role === 'instructor') {
-        res.status(403).send({
-          error: "User lacks authorization to create instructor or admin accounts."
-        });
-      } else {
-        req.body.role = 'student';
-      }
-    }
-
     try {
+      if (req.role === 'admin') {
+        // if user is an admin, they can create any type of user
+        if (req.body.role === 'admin') {
+          req.body.role = 'admin';
+        } else if (req.body.role === 'instructor') {
+          req.body.role = 'instructor';
+        } else {
+          req.body.role = 'student';
+        }
+      } else {
+        // if user is not an admin, they can only create students
+        if (req.body.role === 'admin' || req.body.role === 'instructor') {
+          res.status(403).send({
+            error: "User lacks authorization to create instructor or admin accounts."
+          });
+        } else {
+          req.body.role = 'student';
+        }
+      }
+
       const id = await insertNewUser(req.body);
       res.status(201).send({
         id: id
@@ -68,7 +68,7 @@ router.post('/login', async (req, res) => {
       );
       if (authenticated) {
         const user = await getUserPriveleges(req.body.email);
-        const token = generateAuthToken(user.id, user.role);
+        const token = generateAuthToken(user._id, user.role);
         res.status(200).send({
           token: token
         });
@@ -94,29 +94,30 @@ router.post('/login', async (req, res) => {
  * Route to get user details
  */
 router.get('/:id', requireAuthentication, async (req, res, next) => {
-  if (req.userId === req.params.id) {
-    try {
-      const user = await getUserById(req.params.id, false);
-      if (user) {
+  try {
+    let user = await getUserById(req.params.id, false);
+    if (user) {
+      if (req.userId !== req.params.id) {
+        res.status(403).send({
+          error: "Unauthorized to access the specified resource."
+        });
+      } else {
         if (user.role === 'instructor') {
           user.courses = await getCoursesByInstructorId(user._id);
         } else if (user.role === 'student') {
           user.courses = await getEnrolledCoursesByStudentId(user._id);
         }
         res.status(200).send(user);
-      } else {
-        next();
       }
-    } catch (err) {
-      console.error("  -- Error:", err);
-      res.status(500).send({
-        error: "Error fetching user. Try again later."
-      });
+    } else {
+      next();
     }
-  } else {
-    // userid is not the same as id
-    res.status(403).send({
-      error: "Unauthorized to access the specified resource."
+  } catch (err) {
+    console.error("  -- Error:", err);
+    res.status(500).send({
+      error: "Error fetching user. Try again later."
     });
   }
 });
+
+module.exports = router;

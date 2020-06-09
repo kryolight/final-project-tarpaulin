@@ -72,12 +72,6 @@ exports.getUserByEmail = async function (email, includePassword) {
  * Fetch a user priveleges from the DB based on user email.
  */
 exports.getUserPriveleges = async function (email) {
-  // const user = await exports.getUserByEmail(email, false);
-  // const userPriveleges = {
-  //   id: user._id,
-  //   role: user.role
-  // };
-  // return userPriveleges;
   const db = getDBReference();
   const collection = db.collection('users');
   const results = await collection
