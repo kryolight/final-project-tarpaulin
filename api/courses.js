@@ -9,6 +9,8 @@ const {
     courseSchema,
     getCourseById,
     validateAssignInstructorCombo,
+    deleteCourseById,
+    patchCourse,
     insertNewCourse,
     getCoursesPage
 } = require('../models/course');
@@ -87,25 +89,119 @@ router.post('/', requireAuthentication, async (req, res) => {
 
 
 /****************
- * GET COURSE INFO  
+ * GET COURSE INFO   DONE
 *********/
 router.get('/:id', async (req, res, next) => {
     try {
-      let course = await getCourseById(req.params.id, false);
-      console.log("== Course searched: ", course);
-      if (course) {
-        res.status(200).send(course);
-      } else {
-        res.status(404).send({
-            error: "Course not found, check course id and try again."
-        });
-      }
+        let course = await getCourseById(req.params.id, false);
+        console.log("== Course searched: ", course);
+        if (course) {
+            res.status(200).send(course);
+        } else {
+            res.status(404).send({
+                error: "Course not found, check course id and try again."
+            });
+        }
     } catch (err) {
-      console.error("  -- Error:", err);
-      res.status(500).send({
-        error: "Error fetching course. Try again later."
-      });
+        console.error("  -- Error:", err);
+        res.status(500).send({
+            error: "Error fetching course. Try again later."
+        });
     }
-  });
+});
 
-  module.exports = router;
+
+
+/****************
+ * PATCH COURSE INFO   need to test
+*********/
+router.patch('/:id', requireAuthentication, async (req, res) => {
+    console.log("==req.body: ",req.body);
+    if(validateAgainstSchema(req.body, courseSchema )){
+        try{
+            const course = await getCourseById(req.params.id)//check if instructor id matches course instructorId
+            console.log("== Course being patched: ", course);
+            if (course){
+                if(req.userId == course.instructorId){
+                    try{
+                        const patchSuccess = patchCourse(req.params.id, req.body);
+                        if (patchSuccess){
+                            res.status(200).send({
+                              updatedInfo: req.body,
+                              links:{
+                                  course: `/courses/${id}`
+                              }
+                            });
+                          } else {
+                            next();
+                          }
+                    } catch (err){
+                        res.status(500).send({
+                            error: "Error patching course. Try again later."
+                        });
+                    }
+                } else {
+                    res.status(403).send({
+                        error: "The request was not made by an authenticated User satisfying the authorization criteria."
+                    });
+                }
+            }else{
+                res.status(404).send({
+                    error: "Course of specified id not found"
+                });
+            }
+        
+        }catch (err){
+            console.error("  -- Error:", err);
+            res.status(500).send({
+                error: "Error fetching course. Try again later."
+            });
+        }
+    } else {
+        res.status(400).send({
+            error: "The request body was either not present or did not contain any fields related to Course objects."
+        });
+    }
+});
+
+
+/**
+ * DELETE COURSE BY ID   need to test
+ */
+
+router.delete('/:id', requireAuthentication, async(req, res, next) =>{
+    if(req.role == 'admin'){
+        try{
+            const course = await getCourseById(req.params.id);
+            if(course){
+                try{    
+                    const deleteSuccess = await deleteCourseById(req.params.id);
+                    if(deleteSuccess){
+                        res.status(204).end();
+                    } else { 
+                        next(); 
+                    }
+                }catch(err){
+                    res.status(500).send({
+                        error: "Error deleting course. Try again later."
+                    });
+                }
+            } else {
+                res.status(404).send({
+                    error: "Course with specified id not found"
+                });
+            }
+        } catch(err){
+            res.status(500).send({
+                error: "Error finding course. Try again later."
+            });
+        }
+    } else {
+        res.status(403).send({
+            error: "Delete course request was made by an unauthorized user."
+        });
+    }
+});
+
+
+module.exports = router;

@@ -29,14 +29,23 @@ async function getCourseById(id){
 exports.getCourseById = getCourseById;
 
 
-
+async function patchCourse(courseId, newDetails) {
+    const validatedCourse = extractValidFields(newDetails, exports.courseSchema);
+    const db = getDBReference();
+    const collection = db.collection('courses');
+    const result = await collection.replaceOne(
+        {_id: new ObjectId(courseId)},
+        validatedCourse
+    );
+    return result.matchedCount > 0;
+}
+exports.patchCourse = patchCourse;
 
 async function validateAssignInstructorCombo(assignmentCourseId, userId) {
     const course = await exports.getCourseById(assignmentCourseId);
     return (course.instructorId == userId);
 }
 exports.validateAssignInstructorCombo = validateAssignInstructorCombo;
-
 
 
 
@@ -79,3 +88,16 @@ async function insertNewCourse(course) {
     return result.insertedId;
 }
 exports.insertNewCourse = insertNewCourse;
+
+
+
+async function deleteCourseById(id) {
+    const db = getDBReference();
+    const collection = db.collection('courses');
+    const result = await collection.deleteOne({
+        _id: new ObjectId(id)
+    });
+
+    return result.deletedCount >0;
+}
+exports.deleteCourseById = deleteCourseById;
