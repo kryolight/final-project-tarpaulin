@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const multer = require('multer');
+const crypto = require('crypto');
 
 const { generateAuthToken, requireAuthentication, checkAuthentication } = require('../lib/auth');
 
@@ -7,7 +8,8 @@ const fileTypes = {
     'image/jpeg': 'jpg',
     'image/png': 'png',
     'image/gif': 'gif',
-    'file/zip': 'zip'         //probably how we will require assignments to be turned in
+    'application/zip': 'zip',
+    'application/pdf': 'pdf'         //probably how we will require assignments to be turned in
   };
 
 const {
@@ -49,6 +51,7 @@ const upload = multer({
       filename: (req, file, callback) => {       
         const filename = crypto.pseudoRandomBytes(16).toString('hex');
         const extension = fileTypes[file.mimetype];
+        console.log("==file extention: ", extension);
         callback(null, `${filename}.${extension}`);
       }
     }),
@@ -125,7 +128,7 @@ router.delete('/:id', requireAuthentication, async(req, res, next) =>{
     if(assignment){
       try {
         const authorizedToDelete = await validateAssignInstructorCombo(assignment.courseId, req.userId);
-        if(!authorizedToDelete && !req.role == 'admin'){
+        if(!authorizedToDelete && !(req.role == 'admin')){
           res.status(403).send({
             error: "The delete course request was not made by an authenticated User satisfying the authorization criteria."
           });
@@ -164,7 +167,7 @@ router.delete('/:id', requireAuthentication, async(req, res, next) =>{
 
 
 /****************
- * UPDATE ASSIGNMENT     need to test
+ * UPDATE ASSIGNMENT     DONE
  * Allow instructor to update an existing assignment
  */
 
@@ -178,19 +181,19 @@ router.patch('/:id', requireAuthentication, async (req, res) => {
       if (assignment) {
         try {
           const authorizedToUpdate = await validateAssignInstructorCombo(assignment.courseId, req.userId);
-          if(!authorizedToUpdate && !req.role == 'admin'){
+          if(!authorizedToUpdate && !(req.role == 'admin')){
             res.status(403).send({
               error: "The delete course request was not made by an authenticated User satisfying the authorization criteria."
             });
           } else {
-            /** */
+            
             try{
-              const patchSuccess = patchAssignment(req.params.id, req.body);
+              const patchSuccess = await patchAssignment(req.params.id, req.body);
               if (patchSuccess){
                 res.status(200).send({
                   updatedInfo: req.body,
                   links:{
-                      assignment: `/assignments/${id}`
+                      assignment: `/assignments/${assignment._id}`
                   }
                 });
               } else {
@@ -202,7 +205,7 @@ router.patch('/:id', requireAuthentication, async (req, res) => {
                   error: "Error inserting assignment into DB.  Please try again later."
               });
             }
-            /** */
+            
           }
         } catch (err) {
           res.status(500).send({
@@ -230,7 +233,7 @@ router.patch('/:id', requireAuthentication, async (req, res) => {
 
 
 /****************
- * SUBMIT ASSIGNMENT SUBMISSION      need to test
+ * SUBMIT ASSIGNMENT SUBMISSION      DONE
  * Allow students to input a submission
  */
 
@@ -238,10 +241,10 @@ router.post('/:id/submissions', requireAuthentication, upload.single('submission
   var d = new Date();
   var timestamp = d.toISOString();
   console.log("== req.file:", req.file);
-  console.log("==req.body: ", req.body);
+  console.log("==req.body: ", JSON.parse(JSON.stringify(req.body)));
   console.log("== user and time: ", req.userId, timestamp);
   req.body.timestamp = timestamp;
-  if (validateAgainstSchema(req.body, submissionSchema) && req.file && (req.role == 'student')){
+  if (validateAgainstSchema(JSON.parse(JSON.stringify(req.body)), submissionSchema) && req.file && (req.role == 'student')){
     const submission = {
       contentType: req.file.mimetype,
       filename: req.file.filename,
@@ -279,18 +282,24 @@ router.post('/:id/submissions', requireAuthentication, upload.single('submission
 
 router.get('/:id/submissions', requireAuthentication, async (req, res) => {
   
+  let query = {}
+  query.assignmentId = req.params.id
+  if(req.query.studentId){
+    query.studentId = req.query.studentId
+  }
   try {
     /*
      * Fetch page info, generate HATEOAS links for surrounding pages and then
      * send response.
      */
-    const submissionsPage = await getSubmissionsPage(parseInt(req.query.page) || 1, req.params.id);
+    console.log("== query: ", query);
+    const submissionsPage = await getSubmissionsPage(parseInt(req.query.page) || 1, query);
     submissionsPage.links = {};
     if (submissionsPage.page < submissionsPage.totalPages) {
       submissionsPage.links.nextPage = `${req.params.id}/submissions?page=${submissionsPage.page + 1}`;
       submissionsPage.links.lastPage = `${req.params.id}/submissions?page=${submissionsPage.totalPages}`;
     }
-    if (businessPage.page > 1) {
+    if (submissionsPage.page > 1) {
       submissionsPage.links.prevPage = `${req.params.id}/submissions?page=${submissionsPage.page - 1}`;
       submissionsPage.links.firstPage = `${req.params.id}/submissions?page=1`;
     }

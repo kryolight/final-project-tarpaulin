@@ -17,7 +17,6 @@ exports.assignmentSchema = assignmentSchema;
 const submissionSchema = {
     assignmentId: {required: true},
     studentId: {required: true},
-    file: { required: true},
     timestamp: {required: true}     //set timestamp in endpoint before validation
 
 }
@@ -76,16 +75,16 @@ exports.saveSubmissionFile = async function (submission) {
     return new Promise((resolve, reject) => {
         const db = getDBReference();
         const bucket = new GridFSBucket(db, {
-        bucketName: 'submissions'
+            bucketName: 'submissions'
         });
         const metadata = {
-        contentType: submission.contentType,
-        userId: submission.userId
+            contentType: submission.contentType,
+            userId: submission.userId
         };
 
         const uploadStream = bucket.openUploadStream(
-        submission.filename,
-        { metadata: metadata }
+            submission.filename,
+            { metadata: metadata }
         );
         fs.createReadStream(submission.path).pipe(uploadStream)
         .on('error', (err) => {
@@ -116,7 +115,7 @@ exports.getSubmissionInfoById = async function (id) {
 
 
 
-exports.getSubmissionsPage = async function (page, assignmentId) {
+exports.getSubmissionsPage = async function (page, query) {
     const pageSize = 10;
 
     const db = getDBReference();
@@ -124,15 +123,13 @@ exports.getSubmissionsPage = async function (page, assignmentId) {
         bucketName: 'submissions'
       });
 
-    const count = await bucket.countDocuments();
+    const count = await bucket.find({}).count();
     const lastPage = Math.ceil(count / pageSize);
     page = page > lastPage ? lastPage : page;
     page = page < 1 ? 1 : page;
     const offset = (page - 1) * pageSize;
 
-    const results = await bucket.find({
-        assignmentId: assignmentId
-    })
+    const results = await bucket.find(query)
         .sort({ _id: 1 })
         .skip(offset)
         .limit(pageSize)

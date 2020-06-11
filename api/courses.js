@@ -49,23 +49,23 @@ router.get('/', async (req, res) => {
       }
       res.status(200).send(coursesPage);
     } catch (err) {
-      console.error(err);
-      res.status(500).send({
-        error: "Error fetching courses list.  Please try again later."
-      });
+        console.error("  -- Error:", err);
+        res.status(500).send({
+            error: "Error fetching courses list.  Please try again later."
+        });
     }
   });
 
 
 
 /**
- * INSERT NEW COURSE        need to test
+ * INSERT NEW COURSE        DONE
  */
 router.post('/', requireAuthentication, async (req, res) => {
     console.log("==req.body: ",req.body);
     if(validateAgainstSchema(req.body, courseSchema ) && (req.role == 'admin')){
         try{
-            const id = insertNewCourse(req.body);
+            const id = await insertNewCourse(req.body);
             res.status(201).send({
                 id: id,
                 links:{
@@ -113,7 +113,7 @@ router.get('/:id', async (req, res, next) => {
 
 
 /****************
- * PATCH COURSE INFO   need to test
+ * PATCH COURSE INFO   DONE
 *********/
 router.patch('/:id', requireAuthentication, async (req, res) => {
     console.log("==req.body: ",req.body);
@@ -129,13 +129,14 @@ router.patch('/:id', requireAuthentication, async (req, res) => {
                             res.status(200).send({
                               updatedInfo: req.body,
                               links:{
-                                  course: `/courses/${id}`
+                                  course: `/courses/${course._id}`
                               }
                             });
                           } else {
                             next();
                           }
                     } catch (err){
+                        console.error("  -- Error:", err);
                         res.status(500).send({
                             error: "Error patching course. Try again later."
                         });
@@ -166,7 +167,7 @@ router.patch('/:id', requireAuthentication, async (req, res) => {
 
 
 /**
- * DELETE COURSE BY ID   need to test
+ * DELETE COURSE BY ID   DONE
  */
 
 router.delete('/:id', requireAuthentication, async(req, res, next) =>{
@@ -182,6 +183,7 @@ router.delete('/:id', requireAuthentication, async(req, res, next) =>{
                         next(); 
                     }
                 }catch(err){
+                    console.error("  -- Error:", err);
                     res.status(500).send({
                         error: "Error deleting course. Try again later."
                     });
@@ -192,6 +194,7 @@ router.delete('/:id', requireAuthentication, async(req, res, next) =>{
                 });
             }
         } catch(err){
+            console.error("  -- Error:", err);
             res.status(500).send({
                 error: "Error finding course. Try again later."
             });
