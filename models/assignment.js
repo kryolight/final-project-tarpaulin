@@ -58,3 +58,16 @@ async function deleteAssignmentById(id) {
 exports.deleteAssignmentById = deleteAssignmentById;
 
 
+async function patchAssignment(assingmentId, newDetails) {
+    const validatedAssignment = extractValidFields(newDetails, exports.assignmentSchema);
+    const db = getDBReference();
+    const collection = db.collection('assignments');
+    const result = await collection.replaceOne(
+        {_id: new ObjectId(assignmentId)},
+        validatedAssignment
+    );
+    return result.matchedCount > 0;
+}
+exports.patchAssignment = patchAssignment;
+
+

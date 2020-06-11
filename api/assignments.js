@@ -22,9 +22,11 @@ const {
 
 const {
     assignmentSchema,
+    submissionSchema,
     getAssignmentById,
     insertNewAssignment,
-    deleteAssignmentById
+    deleteAssignmentById,
+    patchAssignment
 } = require('../models/assignment');
 
 const {
@@ -41,8 +43,7 @@ const upload = multer({
     // dest: `${__dirname}/uploads`
     storage: multer.diskStorage({
       destination: `${__dirname}/uploads`,
-      filename: (req, file, callback) => {
-        
+      filename: (req, file, callback) => {       
         const filename = crypto.pseudoRandomBytes(16).toString('hex');
         const extension = fileTypes[file.mimetype];
         callback(null, `${filename}.${extension}`);
@@ -54,7 +55,7 @@ const upload = multer({
   });
 
 /****************
- * CREATE NEW ASSIGNMENT
+ * CREATE NEW ASSIGNMENT          DONE
  * Allow instructor to create a new assignment
  */
 
@@ -64,7 +65,6 @@ router.post('/', requireAuthentication, async (req, res) => {
     (req.role == 'admin' || req.role == 'instructor')){
     try{
       const id = insertNewAssignment(req.body);
-
       res.status(201).send({
           id: id,
           links:{
@@ -77,7 +77,6 @@ router.post('/', requireAuthentication, async (req, res) => {
           error: "Error inserting assignment into DB.  Please try again later."
       });
     }
-
   } else {
     res.status(400).send({
       error: "Invalid body for post request. Check assignment fields and try again."
@@ -87,7 +86,7 @@ router.post('/', requireAuthentication, async (req, res) => {
 
 
 /****************
- * GET ASSIGNMENT INFO
+ * GET ASSIGNMENT INFO      DONE
 *********/
 router.get('/:id', async (req, res, next) => {
   try {
@@ -106,6 +105,13 @@ router.get('/:id', async (req, res, next) => {
     });
   }
 });
+
+
+
+
+/****************
+ * DELETE ASSIGNMENT BY ID   DONE
+*********/
 
 
 router.delete('/:id', requireAuthentication, async(req, res, next) =>{
@@ -140,20 +146,108 @@ router.delete('/:id', requireAuthentication, async(req, res, next) =>{
           error: "Failure to validate userid of assignments courseId to logged in user, try again later."
         });
       }
-
     } else {
       res.status(404).send({
         error: "Assignment specified by courseId not found."
       });
-    }
-    
-    
+    }    
   } catch (err) {
     res.status(500).send({
       error: "Unable to fetch assignment.  Please try again later."
     });
   }
+});
 
+
+
+/****************
+ * UPDATE ASSIGNMENT
+ * Allow instructor to update an existing assignment
+ */
+
+router.patch('/:id', requireAuthentication, async (req, res) => {
+  console.log("==req.body: ",req.body);
+  if(validateAgainstSchema(req.body, assignmentSchema )){
+    try {
+      let assignment = await getAssignmentById(req.params.id, false);
+      console.log("== Assignment to be deleted: ", assignment);
+      console.log("== User: ", req.userId);
+      if (assignment) {
+        try {
+          const authorizedToUpdate = await validateAssignInstructorCombo(assignment.courseId, req.userId);
+          if(!authorizedToUpdate && !req.role == 'admin'){
+            res.status(403).send({
+              error: "The delete course request was not made by an authenticated User satisfying the authorization criteria."
+            });
+          } else {
+            /** */
+            try{
+              const patchSuccess = patchAssignment(req.params.id, req.body);
+              if (patchSuccess){
+                res.status(200).send({
+                  updatedInfo: req.body,
+                  links:{
+                      assignment: `/assignments/${id}`
+                  }
+                });
+              } else {
+                next();
+              }
+            } catch (err) {
+              console.error(err);
+              res.status(500).send({
+                  error: "Error inserting assignment into DB.  Please try again later."
+              });
+            }
+            /** */
+          }
+        } catch (err) {
+          res.status(500).send({
+            error: "Failure to validate userid of assignments courseId to logged in user, try again later."
+          });
+        }
+      } else {
+        res.status(404).send({
+          error: "Assignment specified by courseId not found."
+        });
+      }
+    } catch (err) {
+      res.status(500).send({
+        error: "Unable to fetch assignment.  Please try again later."
+      });
+    }
+    
+  } else {
+    res.status(400).send({
+      error: "Invalid body for post request. Check assignment fields and try again."
+    });
+  }
+});
+
+
+
+/****************
+ * SUBMIT ASSIGNMENT SUBMISSION
+ * Allow students to input a submission
+ */
+
+router.post('/:id/submissions', requireAuthentication, upload.single('submission'), async (req, res) => {
+  var d = new Date();
+  var timestamp = d.toISOString();
+  console.log("== req.file:", req.file);
+  console.log("==req.body: ", req.body);
+  console.log("== user and time: ", req.userId, timestamp);
+  req.body.timestamp = timestamp;
+  if (validateAgainstSchema(req.body, submissionSchema) && req.file){
+    const submission = {
+      contentType: req.file.mimetype,
+      filename: req.file.filename,
+      path: req.file.path,
+      studentid: req.body.studentId,
+      assignmentid: req.body.assignmentId,
+      timestamp: timestamp
+    }
+  }
 });
 
 
