@@ -79,7 +79,9 @@ exports.saveSubmissionFile = async function (submission) {
         });
         const metadata = {
             contentType: submission.contentType,
-            userId: submission.userId
+            studentId: submission.studentId,
+            assignmentId: submission.assignmentId,
+
         };
 
         const uploadStream = bucket.openUploadStream(
@@ -119,17 +121,20 @@ exports.getSubmissionsPage = async function (page, query) {
     const pageSize = 10;
 
     const db = getDBReference();
-    const bucket = new GridFSBucket(db, {
-        bucketName: 'submissions'
-      });
+    /*const bucket = new GridFSBucket(db, {
+        bucketName: 'submissions.files'
+      });*/
+    const collection = db.collection('submissions.files');
 
-    const count = await bucket.find({}).count();
+    //const count = await bucket.find({metadata: query}).count();
+    const count = await collection.countDocuments();
     const lastPage = Math.ceil(count / pageSize);
     page = page > lastPage ? lastPage : page;
     page = page < 1 ? 1 : page;
     const offset = (page - 1) * pageSize;
 
-    const results = await bucket.find(query)
+    //const results = await bucket.find({metadata: query})
+    const results = await collection.find(query)
         .sort({ _id: 1 })
         .skip(offset)
         .limit(pageSize)

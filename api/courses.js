@@ -167,7 +167,7 @@ router.patch('/:id', requireAuthentication, async (req, res) => {
 
 
 /**
- * DELETE COURSE BY ID   DONE
+ * DELETE COURSE BY ID   need to test
  */
 
 router.delete('/:id', requireAuthentication, async(req, res, next) =>{

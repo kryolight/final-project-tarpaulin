@@ -70,7 +70,7 @@ router.post('/', requireAuthentication, async (req, res) => {
     if(validateAgainstSchema(req.body, assignmentSchema ) && 
     (req.role == 'admin' || req.role == 'instructor')){
     try{
-      const id = insertNewAssignment(req.body);
+      const id = await insertNewAssignment(req.body);
       res.status(201).send({
           id: id,
           links:{
@@ -249,8 +249,8 @@ router.post('/:id/submissions', requireAuthentication, upload.single('submission
       contentType: req.file.mimetype,
       filename: req.file.filename,
       path: req.file.path,
-      studentid: req.body.studentId,
-      assignmentid: req.body.assignmentId,
+      studentId: req.body.studentId,
+      assignmentId: req.body.assignmentId,
       timestamp: timestamp
     }
     try {
@@ -283,9 +283,9 @@ router.post('/:id/submissions', requireAuthentication, upload.single('submission
 router.get('/:id/submissions', requireAuthentication, async (req, res) => {
   
   let query = {}
-  query.assignmentId = req.params.id
+  query['metadata.assignmentId'] = req.params.id
   if(req.query.studentId){
-    query.studentId = req.query.studentId
+    query['metadata.studentId'] = req.query.studentId
   }
   try {
     /*
