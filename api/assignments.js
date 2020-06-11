@@ -26,7 +26,10 @@ const {
     getAssignmentById,
     insertNewAssignment,
     deleteAssignmentById,
-    patchAssignment
+    patchAssignment,
+    getSubmissionsPage,
+    saveSubmissionFile,
+    getSubmissionInfoById
 } = require('../models/assignment');
 
 const {
@@ -161,7 +164,7 @@ router.delete('/:id', requireAuthentication, async(req, res, next) =>{
 
 
 /****************
- * UPDATE ASSIGNMENT
+ * UPDATE ASSIGNMENT     need to test
  * Allow instructor to update an existing assignment
  */
 
@@ -227,7 +230,7 @@ router.patch('/:id', requireAuthentication, async (req, res) => {
 
 
 /****************
- * SUBMIT ASSIGNMENT SUBMISSION
+ * SUBMIT ASSIGNMENT SUBMISSION      need to test
  * Allow students to input a submission
  */
 
@@ -238,7 +241,7 @@ router.post('/:id/submissions', requireAuthentication, upload.single('submission
   console.log("==req.body: ", req.body);
   console.log("== user and time: ", req.userId, timestamp);
   req.body.timestamp = timestamp;
-  if (validateAgainstSchema(req.body, submissionSchema) && req.file){
+  if (validateAgainstSchema(req.body, submissionSchema) && req.file && (req.role == 'student')){
     const submission = {
       contentType: req.file.mimetype,
       filename: req.file.filename,
@@ -247,6 +250,56 @@ router.post('/:id/submissions', requireAuthentication, upload.single('submission
       assignmentid: req.body.assignmentId,
       timestamp: timestamp
     }
+    try {
+      const id = await saveSubmissionFile(submission);
+      res.status(200).send({
+        id: id
+      });
+    }catch (err) {
+      res.status(500).send({
+        error: "Error inserting submission into DB.  Please try again later."
+      });
+    }
+  } else {
+    res.status(400).send({
+      error: "Request body needs 'file' submission from a student and required fields filled"
+    });
+  }
+});
+
+
+
+
+
+/****************
+ * LIST ALL SUBMISSIONS FOR SPECIFIED ASSIGNMENT     need to test
+ * Allow instructor to get a list of all student's submissions for an assignment
+ */
+
+
+router.get('/:id/submissions', async (req, res) => {
+  
+  try {
+    /*
+     * Fetch page info, generate HATEOAS links for surrounding pages and then
+     * send response.
+     */
+    const submissionsPage = await getSubmissionsPage(parseInt(req.query.page) || 1);
+    submissionsPage.links = {};
+    if (submissionsPage.page < submissionsPage.totalPages) {
+      submissionsPage.links.nextPage = `${req.params.id}/submissions?page=${submissionsPage.page + 1}`;
+      submissionsPage.links.lastPage = `${req.params.id}/submissions?page=${submissionsPage.totalPages}`;
+    }
+    if (businessPage.page > 1) {
+      submissionsPage.links.prevPage = `${req.params.id}/submissions?page=${submissionsPage.page - 1}`;
+      submissionsPage.links.firstPage = `${req.params.id}/submissions?page=1`;
+    }
+    res.status(200).send(submissionsPage);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({
+      error: "Error fetching businesses list.  Please try again later."
+    });
   }
 });
 
