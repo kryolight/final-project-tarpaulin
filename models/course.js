@@ -22,7 +22,7 @@ async function getCourseById(id){
     const collection = db.collection('courses');
     const course =  await collection.find({
         _id: new ObjectId(id)
-    }).toArray();
+    }).project({students: 0}).toArray();
 
     return course[0];
 }
@@ -68,3 +68,14 @@ exports.getCoursesPage = async function (page, queries) {
         totalCount: results.length
     };
 };
+
+
+
+async function insertNewCourse(course) {
+    newCourse = extractValidFields(course, courseSchema);
+    const db = getDBReference();
+    const collection = db.collection('courses');
+    const result = await collection.insertOne(newCourse);
+    return result.insertedId;
+}
+exports.insertNewCourse = insertNewCourse;
