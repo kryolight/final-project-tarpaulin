@@ -74,44 +74,44 @@ exports.patchAssignment = patchAssignment;
 
 exports.saveSubmissionFile = async function (submission) {
     return new Promise((resolve, reject) => {
-      const db = getDBReference();
-      const bucket = new GridFSBucket(db, {
+        const db = getDBReference();
+        const bucket = new GridFSBucket(db, {
         bucketName: 'submissions'
-      });
-      const metadata = {
+        });
+        const metadata = {
         contentType: submission.contentType,
         userId: submission.userId
-      };
-  
-      const uploadStream = bucket.openUploadStream(
+        };
+
+        const uploadStream = bucket.openUploadStream(
         submission.filename,
         { metadata: metadata }
-      );
-      fs.createReadStream(submission.path).pipe(uploadStream)
+        );
+        fs.createReadStream(submission.path).pipe(uploadStream)
         .on('error', (err) => {
-          reject(err);
+            reject(err);
         })
         .on('finish', (result) => {
-          resolve(result._id);
+            resolve(result._id);
         });
     });
-  };
+};
 
 
-  exports.getSubmissionInfoById = async function (id) {
+exports.getSubmissionInfoById = async function (id) {
     const db = getDBReference();
     const bucket = new GridFSBucket(db, {
-      bucketName: 'submissions'
+        bucketName: 'submissions'
     });
     // const collection = db.collection('images');
     if (!ObjectId.isValid(id)) {
-      return null;
+        return null;
     } else {
-      const results = await bucket.find({ _id: new ObjectId(id) })
+        const results = await bucket.find({ _id: new ObjectId(id) })
         .toArray();
-      return results[0];
+        return results[0];
     }
-  };
+};
 
 
 

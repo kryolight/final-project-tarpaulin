@@ -36,3 +36,34 @@ async function validateAssignInstructorCombo(assignmentCourseId, userId) {
     return (course.instructorId == userId);
 }
 exports.validateAssignInstructorCombo = validateAssignInstructorCombo;
+
+
+
+
+exports.getCoursesPage = async function (page, queries) {
+    const pageSize = 10;
+
+
+    const db = getDBReference();
+    const collection = db.collection('courses');
+
+    const count = await collection.countDocuments();
+    const lastPage = Math.ceil(count / pageSize);
+    page = page > lastPage ? lastPage : page;
+    page = page < 1 ? 1 : page;
+    const offset = (page - 1) * pageSize;
+
+    const results = await collection.find(queries)
+        .sort({ _id: 1 })
+        .skip(offset)
+        .limit(pageSize)
+        .toArray();
+
+    return {
+        courses: results,
+        pageNumber: page,
+        totalPages: lastPage,
+        pageSize: pageSize,
+        totalCount: results.length
+    };
+};

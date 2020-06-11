@@ -272,19 +272,19 @@ router.post('/:id/submissions', requireAuthentication, upload.single('submission
 
 
 /****************
- * LIST ALL SUBMISSIONS FOR SPECIFIED ASSIGNMENT     need to test
+ * LIST ALL SUBMISSIONS FOR SPECIFIED ASSIGNMENT  need to add authorization  need to test 
  * Allow instructor to get a list of all student's submissions for an assignment
  */
 
 
-router.get('/:id/submissions', async (req, res) => {
+router.get('/:id/submissions', requireAuthentication, async (req, res) => {
   
   try {
     /*
      * Fetch page info, generate HATEOAS links for surrounding pages and then
      * send response.
      */
-    const submissionsPage = await getSubmissionsPage(parseInt(req.query.page) || 1);
+    const submissionsPage = await getSubmissionsPage(parseInt(req.query.page) || 1, req.params.id);
     submissionsPage.links = {};
     if (submissionsPage.page < submissionsPage.totalPages) {
       submissionsPage.links.nextPage = `${req.params.id}/submissions?page=${submissionsPage.page + 1}`;
@@ -298,7 +298,7 @@ router.get('/:id/submissions', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send({
-      error: "Error fetching businesses list.  Please try again later."
+      error: "Error fetching submissions list.  Please try again later."
     });
   }
 });
