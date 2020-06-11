@@ -22,7 +22,8 @@ const {
 
 const {
     assignmentSchema,
-    getAssignmentById
+    getAssignmentById,
+    insertNewAssignment
 } = require('../models/assignment');
 
 
@@ -52,28 +53,30 @@ const upload = multer({
  */
 
 router.post('/', requireAuthentication, async (req, res) => {
+  console.log("==req.body: ",req.body);
     if(validateAgainstSchema(req.body, assignmentSchema ) && 
     (req.role == 'admin' || req.role == 'instructor')){
-      try{
-          const id = insertNewAssignment(req.body);
-          res.status(201).send({
-              id: id,
-              links:{
-                  assignment: `/assignments/${id}`
-              }
-          });
-      } catch (err) {
-          console.error(err);
-          res.status(500).send({
-              error: "Error inserting assignment into DB.  Please try again later."
-          });
-      }
+    try{
+      const id = insertNewAssignment(req.body);
 
-    } else {
-        res.status(400).send({
-            error: "Invalid body for post request. Check assignment fields and try again."
-          });
+      res.status(201).send({
+          id: id,
+          links:{
+              assignment: `/assignments/${id}`
+          }
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).send({
+          error: "Error inserting assignment into DB.  Please try again later."
+      });
     }
+
+  } else {
+    res.status(400).send({
+      error: "Invalid body for post request. Check assignment fields and try again."
+    });
+  }
 });
 
 
@@ -86,6 +89,7 @@ router.get('/:id', async (req, res, next) => {
     if (assignment) {
       res.status(200).send(assignment);
     } else {
+      console.log("-- No assignment found");
       next();
     }
   } catch (err) {

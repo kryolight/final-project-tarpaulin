@@ -8,7 +8,7 @@ const {
 } = require('./lib/mongo');
 
 
-const api = require('./api');
+
 const { applyRateLimit } = require('./lib/redis');
 
 
