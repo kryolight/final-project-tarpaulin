@@ -54,6 +54,7 @@ exports.getCoursesPage = async function (page, queries) {
     const offset = (page - 1) * pageSize;
 
     const results = await collection.find(queries)
+        .project({students: 0})
         .sort({ _id: 1 })
         .skip(offset)
         .limit(pageSize)
