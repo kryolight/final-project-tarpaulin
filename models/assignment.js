@@ -39,14 +39,10 @@ exports.insertNewAssignment = insertNewAssignment;
 exports.getAssignmentById = async function (id) {
     const db = getDBReference();
     const collection = db.collection('assignments');
-    if (!ObjectId.isValid(id)) {
-        return null;
-    } else {
-        const results = await collection
-        .find({ _id: new ObjectId(id) })
-        .toArray();
-        return results[0];
-    }
+    
+    const results = await collection.find({ _id: new ObjectId(id) }).toArray();
+    return results[0];
+
 };
 
 
@@ -60,3 +56,5 @@ async function deleteAssignmentById(id) {
     return result.deletedCount >0;
 }
 exports.deleteAssignmentById = deleteAssignmentById;
+
+

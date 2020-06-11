@@ -23,8 +23,14 @@ const {
 const {
     assignmentSchema,
     getAssignmentById,
-    insertNewAssignment
+    insertNewAssignment,
+    deleteAssignmentById
 } = require('../models/assignment');
+
+const {
+  getCourseById,
+  validateAssignInstructorCombo
+} = require('../models/course');
 
 
 
@@ -86,6 +92,7 @@ router.post('/', requireAuthentication, async (req, res) => {
 router.get('/:id', async (req, res, next) => {
   try {
     let assignment = await getAssignmentById(req.params.id, false);
+    console.log("== Assignment searched: ", assignment);
     if (assignment) {
       res.status(200).send(assignment);
     } else {
@@ -102,24 +109,49 @@ router.get('/:id', async (req, res, next) => {
 
 
 router.delete('/:id', requireAuthentication, async(req, res, next) =>{
-  const assignId =  req.params.id;
-
   try{
-    const assignment = getAssignmentById(assignId);
+    let assignment = await getAssignmentById(req.params.id, false);
+    console.log("== Assignment to be deleted: ", assignment);
+    console.log("== User: ", req.userId);
     if(assignment){
       try {
-              //try delete, using id as a check
+        const authorizedToDelete = await validateAssignInstructorCombo(assignment.courseId, req.userId);
+        if(!authorizedToDelete && !req.role == 'admin'){
+          res.status(403).send({
+            error: "The delete course request was not made by an authenticated User satisfying the authorization criteria."
+          });
+        } else {
+          try {
+            const deleteSuccessful = await deleteAssignmentById(req.params.id);
+            if (deleteSuccessful) {
+              res.status(204).end();
+            } else {
+              next();
+            }
+          } catch (err) {
+            console.error(err);
+            res.status(500).send({
+              error: "Unable to delete assignment.  Please try again later."
+            });
+          }          
+        }
       } catch (err){
-              //unauthorized
+        res.status(500).send({
+          error: "Failure to validate userid of assignments courseId to logged in user, try again later."
+        });
       }
 
     } else {
-      //invalid assignment id
+      res.status(404).send({
+        error: "Assignment specified by courseId not found."
+      });
     }
     
     
   } catch (err) {
-      //error searching for assignment
+    res.status(500).send({
+      error: "Unable to fetch assignment.  Please try again later."
+    });
   }
 
 });
