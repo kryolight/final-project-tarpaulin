@@ -140,9 +140,9 @@ async function getAssignmentsByCourseId(courseId) {
 
     const results = await collection.find({
         courseId: new ObjectId(courseId)
-    });
+    }).toArray();
 
-    return results.map(elem => elem._id.valueOf()) || [];
+    return results.map(elem => elem._id.valueOf());
 }
 
 exports.getStudents = async (courseId, userId, userRole) => {
@@ -236,6 +236,14 @@ exports.getRoster = async (courseId, userId, userRole) => {
 };
 
 exports.getAssignments = async (courseId) => {
+
+    if (!ObjectId.isValid(courseId)) {
+        return {
+            status: 403,
+            error: 'invalid id'
+        };
+    }
+
     const results = await getAssignmentsByCourseId(courseId);
     
     if (results) {

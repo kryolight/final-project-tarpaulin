@@ -12,15 +12,6 @@ const fileTypes = {
     'application/pdf': 'pdf'         //probably how we will require assignments to be turned in
   };
 
-const {
-  UserSchema,
-  insertNewUser,
-  getUserById,
-  getUserPriveleges,
-  validateUser,
-  getCoursesByInstructorId,
-  getEnrolledCoursesByStudentId
-} = require('../models/users');
 
 const {
     assignmentSchema,
@@ -31,7 +22,7 @@ const {
     patchAssignment,
     getSubmissionsPage,
     saveSubmissionFile,
-    getSubmissionInfoById
+    updateAssignmentSchema
 } = require('../models/assignment');
 
 const {
@@ -173,7 +164,7 @@ router.delete('/:id', requireAuthentication, async(req, res, next) =>{
 
 router.patch('/:id', requireAuthentication, async (req, res) => {
   console.log("==req.body: ",req.body);
-  if(validateAgainstSchema(req.body, assignmentSchema )){
+  if(validateAgainstSchema(req.body, updateAssignmentSchema )){
     try {
       let assignment = await getAssignmentById(req.params.id, false);
       console.log("== Assignment to be deleted: ", assignment);

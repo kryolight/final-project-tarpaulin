@@ -121,7 +121,7 @@ router.get('/:id', async (req, res, next) => {
 
 
 router.get('/:id/students', [requireAuthentication, checkValidId("params", "id")], async (req, res) => {
-    const result = await getStudents(req.params.id, req.userId, res.role);
+    const result = await getStudents(req.params.id, req.userId, req.role);
     
     if (result.error) {
         res.status(result.status).send({
@@ -148,7 +148,7 @@ router.patch('/:id', requireAuthentication, async (req, res) => {
             const course = await getCourseById(req.params.id)//check if instructor id matches course instructorId
             console.log("== Course being patched: ", course);
             if (course){
-                if(req.userId == course.instructorId){
+                if(req.userId == course.instructorId || req.role == 'admin'){
                     try{
                         const patchSuccess = patchCourse(req.params.id, req.body);
                         if (patchSuccess){
@@ -200,7 +200,7 @@ router.post('/:id/students', [requireAuthentication, checkValidId("params", "id"
     };
 
     if (delta.add || delta.remove) {
-        const result = await updateEnrollment(req.params.id, req.userId, res.role, delta);
+        const result = await updateEnrollment(req.params.id, req.userId, req.role, delta);
         
         if (result.error) {
             res.status(result.status).send({
@@ -284,9 +284,10 @@ router.get('/:id/roster', [requireAuthentication, checkValidId("params", "id")],
     }
 });
 
-router.get('/:id/assignments', checkValidId("params", "id"), async (req, res) => {
+router.get('/:id/assignments', async (req, res) => {
     const result = await getAssignments(req.params.id);
-    
+    // console.log(result);
+    // console.log("asdf");
     if (result.error) {
         res.status(result.status).send({
             error: result.error
@@ -294,7 +295,6 @@ router.get('/:id/assignments', checkValidId("params", "id"), async (req, res) =>
     } else {
         res.status(200).send({
             assignments: result.assignments
-
         });
     }
 });
