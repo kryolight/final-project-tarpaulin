@@ -1,12 +1,19 @@
 const router = require('express').Router();
+
+const { validateAgainstSchema } = require('../lib/validation');
+const { checkValidId } = require('../lib/mongo');
+const stringify = require('csv-stringify');
 const multer = require('multer');
 
 const { generateAuthToken, requireAuthentication, checkAuthentication } = require('../lib/auth');
 
-const { validateAgainstSchema } = require('../lib/validation');
 
 const {
     courseSchema,
+    getStudents,
+    updateEnrollment,
+    getAssignments,
+    getRoster,
     getCourseById,
     validateAssignInstructorCombo,
     deleteCourseById,
@@ -112,6 +119,25 @@ router.get('/:id', async (req, res, next) => {
 
 
 
+
+router.get('/:id/students', [requireAuthentication, checkValidId("params", "id")], async (req, res) => {
+    const result = await getStudents(req.params.id, req.userId, res.role);
+    
+    if (result.error) {
+        res.status(result.status).send({
+            error: result.error
+        });
+    } else {
+        res.status(result.status).send({
+            students: result.students
+
+        });
+    }
+});
+
+
+
+
 /****************
  * PATCH COURSE INFO   DONE
 *********/
@@ -166,6 +192,34 @@ router.patch('/:id', requireAuthentication, async (req, res) => {
 });
 
 
+
+router.post('/:id/students', [requireAuthentication, checkValidId("params", "id")], async (req, res) => {
+    const delta = {
+        add: req.body.add || [],
+        remove: req.body.remove || []
+    };
+
+    if (delta.add || delta.remove) {
+        const result = await updateEnrollment(req.params.id, req.userId, res.role, delta);
+        
+        if (result.error) {
+            res.status(result.status).send({
+                error: result.error
+            });
+        } else {
+            res.status(200).send({});
+        }
+
+    } else {
+        res.status(400).send({
+            error: "Body requires lists of students to add and/or remove"
+
+        });
+    }
+});
+
+
+
 /**
  * DELETE COURSE BY ID   need to test
  */
@@ -206,5 +260,43 @@ router.delete('/:id', requireAuthentication, async(req, res, next) =>{
     }
 });
 
+
+
+router.get('/:id/roster', [requireAuthentication, checkValidId("params", "id")], async (req, res) => {
+    const result = await getRoster(req.params.id, req.userId, req.role);
+
+    if (result.error) {
+        res.status(result.status).send({
+            error: result.error
+        });
+    } else {
+        
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=\"' + 'download-' + Date.now() + '.csv\"');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Pragma', 'no-cache');
+
+        stringify(
+            result.roster, 
+            { header: false }
+        )
+        .pipe(res);
+    }
+});
+
+router.get('/:id/assignments', checkValidId("params", "id"), async (req, res) => {
+    const result = await getAssignments(req.params.id);
+    
+    if (result.error) {
+        res.status(result.status).send({
+            error: result.error
+        });
+    } else {
+        res.status(200).send({
+            assignments: result.assignments
+
+        });
+    }
+});
 
 module.exports = router;
