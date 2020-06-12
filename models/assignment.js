@@ -11,7 +11,7 @@ const assignmentSchema = {
     title: { required: true },
     points: { required: true },
     due: {required: true}
-  };
+};
 exports.assignmentSchema = assignmentSchema;
 
 const submissionSchema = {
@@ -22,6 +22,13 @@ const submissionSchema = {
 }
 exports.submissionSchema = submissionSchema;
 
+const updateAssignmentSchema = {
+    courseId: { required: false},
+    title: { required: false },
+    points: { required: false },
+    due: { required: false}
+};
+exports.updateAssignmentSchema = updateAssignmentSchema;
 
 
 async function insertNewAssignment(assignment) {
@@ -58,7 +65,7 @@ exports.deleteAssignmentById = deleteAssignmentById;
 
 
 async function patchAssignment(assingmentId, newDetails) {
-    const validatedAssignment = extractValidFields(newDetails, exports.assignmentSchema);
+    const validatedAssignment = extractValidFields(newDetails, updateAssignmentSchema);
     const db = getDBReference();
     const collection = db.collection('assignments');
     const result = await collection.replaceOne(
