@@ -1,12 +1,14 @@
 const express = require('express');
 const morgan = require('morgan');
 
+const api = require('./api');
+
 const {
     connectToDB
 } = require('./lib/mongo');
 
 
-const api = require('./api');
+
 const { applyRateLimit } = require('./lib/redis');
 
 
@@ -45,6 +47,15 @@ app.use('*', function (req, res, next) {
   res.status(404).json({
     error: "Requested resource " + req.originalUrl + " does not exist"
   });
+
+});
+
+app.use(applyRateLimit);
+
+app.use('/', (req, res) => {
+    res.status(200).send({
+        msg: "Hello, World"
+    });
 });
 
 
